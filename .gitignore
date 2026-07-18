@@ -1,0 +1,10 @@
+# Build directories
+bin/
+bin-int/
+
+# Compiler files
+*.make
+Makefile
+
+# Editor
+.vscode/
