@@ -6,6 +6,8 @@
 const int NUM_KEYS = 25;
 const bool KEY_COLOUR[] = { false, true, false, true, false, false, true, false, true, false, true, false };
 
+static void processPipewire(void* userdata);
+
 class Piano : public QWidget {
     public:
         Piano(QWidget* parent = nullptr);
