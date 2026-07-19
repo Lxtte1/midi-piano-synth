@@ -1,13 +1,21 @@
 #include <pipewire/pipewire.h>
 #include <thread>
+#include <map>
+
+struct Note {
+    double frequency;
+    double phase;
+    double age;
+
+    bool active;
+    double released;
+};
 
 struct Data {
     struct pw_main_loop* loop;
     struct pw_stream* stream;
 
-    double phase;
-    double frequency;
-    double age;
+    std::map<int, Note> notes;
 };
 
 class AudioManager {
@@ -22,9 +30,10 @@ class AudioManager {
         static const double harmonics(double phase, int n);
         static const double samplePhase(double phase);
         static const double envelope(double age);
+        static const double envelope(double age, double releasedAt);
 
-        void setTone(double tone);
-        void stop();
+        void playNote(int note);
+        void stopNote(int note = -1);
     private:
         static void process(void* userdata);
         static void run(Data* data);

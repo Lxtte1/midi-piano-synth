@@ -10,7 +10,7 @@ AudioManager::AudioManager() {
 
     pw_init(nullptr, nullptr);
     
-    this->data = { nullptr, nullptr, 0.0, this->getFrequency(48), 0.0 };
+    this->data = { nullptr, nullptr, std::map<int, Note>() };
     this->data.loop = pw_main_loop_new(NULL);
     pw_properties* properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Music",
                                                   PW_KEY_APP_NAME, "Digital Piano", PW_KEY_APP_ICON_NAME, "keyboard", NULL);
@@ -45,11 +45,6 @@ const double AudioManager::harmonics(double phase, int n) {
 }
 
 const double AudioManager::samplePhase(double phase) {
-    // return ( sin(phase)
-    //        + sin(phase * 2.0) * 0.5
-    //        + sin(phase * 3.0) * 0.25
-    //        + sin(phase * 4.0) * 0.125
-    //        + sin(phase * 5.0) * 0.0625 ) / 1.9375;
     return (AudioManager::harmonics(phase, 1)
             + AudioManager::harmonics(phase, 2) * 0.5
             + AudioManager::harmonics(phase, 3) * 0.25
@@ -64,14 +59,22 @@ const double AudioManager::envelope(double age) {
     return attack * decay;
 }
 
-void AudioManager::setTone(double tone) {
-    this->data.phase = 0.0;
-    this->data.frequency = tone;
-    this->data.age = 0.0;
+const double AudioManager::envelope(double age, double releasedAt) {
+    double attack = 1.0 - exp(-80.0 * age);
+    double decay = exp(-3.0 * age);
+    double release = exp(-7.0 * (age - releasedAt));
+
+    return attack * decay * release;
 }
 
-void AudioManager::stop() {
-    this->data.frequency = 0.0;
+void AudioManager::playNote(int note) {
+    this->data.notes[note] = { this->getFrequency(note), 0.0, 0.0, true, 0.0 };
+}
+
+void AudioManager::stopNote(int note) {
+    Note& _note = this->data.notes[note];
+    _note.active = false;
+    _note.released = _note.age;
 }
 
 void AudioManager::process(void* userdata) {
@@ -86,15 +89,24 @@ void AudioManager::process(void* userdata) {
     if (b->requested) frames = SPA_MIN(b->requested, frames);
 
     for (unsigned int i = 0; i < frames; i++) {
-        data->phase += 2 * M_PI * data->frequency / AudioManager::rate;
-        if (data->phase >= 2 * M_PI) data->phase -= 2 * M_PI;
+        double sample = 0.0;
 
-        double value = AudioManager::samplePhase(data->phase) * AudioManager::envelope(data->age);
-        short sample = (short)(value * 32767.0 * 0.5);
+        std::map<int, Note>::iterator j;
+        for (j = data->notes.begin(); j != data->notes.end(); j++) {
+            Note& note = j->second;
 
-        for (unsigned int c = 0; c < AudioManager::channels; c++) *dst++ = sample;
+            note.phase += 2 * M_PI * note.frequency / AudioManager::rate;
+            if (note.phase >= 2 * M_PI) note.phase -= 2 * M_PI;
 
-        data->age += 1.0 / AudioManager::rate;
+            double value = sin(note.phase) * 0.5;
+            if (note.active) value *= envelope(note.age);
+            else value *= envelope(note.age, note.released);
+
+            sample += value;
+            note.age += 1.0 / AudioManager::rate;
+        };
+
+        for (unsigned int c = 0; c < AudioManager::channels; c++) *dst++ = sample * 32767.0;
     }
 
     buffer->datas[0].chunk->offset = 0;

@@ -1,5 +1,6 @@
 #include <QResizeEvent>
 #include <QPushButton>
+#include <QKeyEvent>
 #include <QWidget>
 #include "audio.h"
 #include <vector>
@@ -15,14 +16,16 @@ class Piano : public QWidget {
 
     protected:
         void resizeEvent(QResizeEvent* event) override;
+        void keyPressEvent(QKeyEvent* event) override;
+        void keyReleaseEvent(QKeyEvent* event) override;
 
     private:
         void redraw();
 
         AudioManager* audio;
 
-        std::vector<QPushButton*> whiteKeys;
-        std::vector<QPushButton*> blackKeys;
+        int whiteKeys = 0;
+        std::vector<QPushButton*> keys;
 };
 
 #pragma once

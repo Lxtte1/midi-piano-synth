@@ -21,43 +21,61 @@ Piano::Piano(AudioManager& audioManager, QWidget* parent) : QWidget(parent) {
         label->setStyleSheet(QString("color: %1;").arg(KEY_COLOUR[i % 12] ? "white" : "black"));
         layout->addWidget(label);
 
-        if (KEY_COLOUR[i % 12]) this->blackKeys.push_back(button);
-        else this->whiteKeys.push_back(button);
+        this->keys.push_back(button);
+        if (!KEY_COLOUR[i % 12]) this->whiteKeys++;
 
         QObject::connect(button, &QPushButton::pressed, [=]() {
-            double tone = this->audio->getFrequency(i + (START_OCTAVE + 1) * 12);
-            this->audio->setTone(tone);
+            this->audio->playNote(i + (START_OCTAVE + 1) * 12);
         });
 
         QObject::connect(button, &QPushButton::released, [=]() {
-            this->audio->stop();
+            this->audio->stopNote(i + (START_OCTAVE + 1) * 12);
         });
     }
 
     this->redraw();
 }
+
 void Piano::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     this->redraw();
 }
 
+void Piano::keyPressEvent(QKeyEvent* event) {
+    if (event->isAutoRepeat()) return;
+    this->audio->playNote(event->key());
+
+    int index = event->key() - 48;
+    QPushButton* button = this->keys[index];
+    button->setDown(true);
+}
+
+void Piano::keyReleaseEvent(QKeyEvent* event) {
+    if (event->isAutoRepeat()) return;
+    this->audio->stopNote(event->key());
+
+    int index = event->key() - 48;
+    QPushButton* button = this->keys[index];
+    button->setDown(false);
+}
+
 void Piano::redraw() {
-    unsigned int whiteKeyWidth = this->width() / this->whiteKeys.size();
+    unsigned int whiteKeyWidth = this->width() / this->whiteKeys;
     unsigned int blackKeyWidth = whiteKeyWidth / 2;
 
     unsigned int whiteIndex = 0;
     unsigned int blackIndex = 0;
 
     for (unsigned int i = 0; i < NUM_KEYS; i++) {
+        QPushButton* button = this->keys[i];
+
         if (KEY_COLOUR[i % 12]) {
-            QPushButton* button = this->blackKeys[blackIndex];
             button->setGeometry(whiteIndex * whiteKeyWidth - blackKeyWidth / 2, 0, blackKeyWidth, this->height() * 0.55);
             button->setMaximumHeight(400);
             button->raise();
 
             blackIndex++;
         } else {
-            QPushButton* button = this->whiteKeys[whiteIndex];
             button->setGeometry(whiteIndex * whiteKeyWidth, 0, whiteKeyWidth, this->height());
             
             whiteIndex++;
