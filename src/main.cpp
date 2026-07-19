@@ -3,6 +3,7 @@
 #include <QWidget>
 
 #include "piano.h"
+#include "audio.h"
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
@@ -16,11 +17,13 @@ int main(int argc, char* argv[]) {
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
     
-    Piano piano(&window);
+    AudioManager manager;
+    Piano piano(manager, &window);
     piano.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     piano.show();
 
     layout->addWidget(&piano);
+
 
     return app.exec();
 }
