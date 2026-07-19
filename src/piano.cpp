@@ -1,10 +1,45 @@
 #include <spa/param/audio/format-utils.h>
-#include <spa/interfaces/audio/aec.h>
-#include <pipewire/pipewire.h>
+#include <thread>
+
 #include "piano.h"
 
 static void processPipewire(void* userdata) {
-    printf("PipeWire process\n");
+    struct Data* data = (Data*)userdata;
+    struct pw_buffer* b;
+    struct spa_buffer* buf;
+    int i, c, n_frames, stride;
+    int16_t* dst, val;
+
+    if ((b = pw_stream_dequeue_buffer(data->stream)) == NULL) {
+        pw_log_warn("Out of buffers: %m");
+        return;
+    }
+
+    buf = b->buffer;
+    if ((dst = (int16_t*)buf->datas[0].data) == NULL) return;
+
+    stride = sizeof(int16_t) * 2;
+    n_frames = buf->datas[0].maxsize / stride;
+    if (b->requested) n_frames = SPA_MIN(b->requested, n_frames);
+
+    for (unsigned int i = 0; i < n_frames; i++) {
+        data->accumulator += 6.2832 * data->frequency / 44100; // 2 * pi * 440 / 44100
+        if (data->accumulator >= 6.2832) data->accumulator -= 6.2832; // 2 * pi
+
+        val = sin(data->accumulator) * 32767.0;
+        for (c = 0; c < 2; c++) *dst++ = val * 0.5;
+    }
+
+    buf->datas[0].chunk->offset = 0;
+    buf->datas[0].chunk->stride = stride;
+    buf->datas[0].chunk->size = n_frames * stride;
+
+    pw_stream_queue_buffer(data->stream, b);
+}
+
+static void runPipewire(pw_main_loop* loop) {
+    printf("Hello!\n");
+    pw_main_loop_run(loop);
 }
 
 Piano::Piano(QWidget* parent) : QWidget(parent) {
@@ -18,43 +53,50 @@ Piano::Piano(QWidget* parent) : QWidget(parent) {
 
         if (KEY_COLOUR[i % 12]) this->blackKeys.push_back(button);
         else this->whiteKeys.push_back(button);
+
+        QObject::connect(button, &QPushButton::pressed, [=]() {
+            this->data.frequency = 100 * i;
+        });
     }
 
     this->redraw();
 
     // Temporary
     // https://docs.pipewire.org/page_tutorial4.html
-    struct Data {
-        struct pw_main_loop* loop;
-        struct pw_stream* stream;
-        double accumulator;
-    };
-
     static const struct pw_stream_events stream_events = {
         .version = PW_VERSION_STREAM_EVENTS,
         .process = processPipewire,
     };
 
-    struct Data data = { 0, };
+    this->data = { nullptr, nullptr, 0, 600 };
     const struct spa_pod* params[1];
     uint8_t buffer[1024];
     struct spa_pod_builder builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
 
     pw_init(nullptr, nullptr);
 
-    data.loop = pw_main_loop_new(NULL);
+    this->data.loop = pw_main_loop_new(NULL);
     pw_properties* properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Music", PW_KEY_APP_NAME, "Test", PW_KEY_APP_ICON_NAME, "addressbook", NULL);
-    data.stream = pw_stream_new_simple(pw_main_loop_get_loop(data.loop), "audio-src", properties, &stream_events, &data);
+    this->data.stream = pw_stream_new_simple(pw_main_loop_get_loop(this->data.loop), "audio-src", properties, &stream_events, &this->data);
 
     spa_audio_info_raw info = { .format = SPA_AUDIO_FORMAT_S16, .rate = 44100, .channels = 2 };
     params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &info);
 
     pw_stream_flags flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS | PW_STREAM_FLAG_RT_PROCESS);
-    pw_stream_connect(data.stream, PW_DIRECTION_OUTPUT, PW_ID_ANY, flags, params, 1);
+    pw_stream_connect(this->data.stream, PW_DIRECTION_OUTPUT, PW_ID_ANY, flags, params, 1);
 
-    pw_main_loop_run(data.loop);
-    pw_stream_destroy(data.stream);
-    pw_main_loop_destroy(data.loop);
+    this->pipewire = std::thread(&runPipewire, this->data.loop);
+
+    // pw_main_loop_run(this->data.loop);
+    // pw_stream_destroy(this->data.stream);
+    // pw_main_loop_destroy(this->data.loop);
+}
+
+Piano::~Piano() {
+    pw_main_loop_quit(this->data.loop);
+
+    if (this->pipewire.joinable())
+        this->pipewire.join();
 }
 
 void Piano::resizeEvent(QResizeEvent* event) {

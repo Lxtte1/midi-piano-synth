@@ -16,7 +16,7 @@ project "Digital Piano"
 
     filter "system:linux"
         buildoptions { "-fPIC" }
-        linkoptions { "-fPIC" }
+        linkoptions { }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
