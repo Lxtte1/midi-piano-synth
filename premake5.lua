@@ -12,7 +12,7 @@ project "Digital Piano"
 
     files { "src/**.cpp" }
     includedirs { "include", "/usr/include/qt6", "/usr/include/qt6/QtCore", "/usr/include/qt6/QtWidgets", "/usr/include/qt6/QtGui", "/usr/include/pipewire-0.3", "/usr/include/spa-0.2" }
-    links { "Qt6Core", "Qt6Widgets", "Qt6Gui", "pipewire-0.3" }
+    links { "Qt6Core", "Qt6Widgets", "Qt6Gui", "pipewire-0.3", "asound" }
 
     filter "system:linux"
         buildoptions { "-fPIC" }

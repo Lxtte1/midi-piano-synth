@@ -36,27 +36,33 @@ Piano::Piano(AudioManager& audioManager, QWidget* parent) : QWidget(parent) {
     this->redraw();
 }
 
+void Piano::pressKey(int key) {
+    this->audio->playNote(key);
+
+    QPushButton* button = this->keys[key - 48];
+    button->setDown(true);
+}
+
+void Piano::releaseKey(int key) {
+    this->audio->stopNote(key);
+
+    QPushButton* button = this->keys[key - 48];
+    button->setDown(false);
+}
+
 void Piano::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     this->redraw();
 }
 
 void Piano::keyPressEvent(QKeyEvent* event) {
-    if (event->isAutoRepeat()) return;
-    this->audio->playNote(event->key());
-
-    int index = event->key() - 48;
-    QPushButton* button = this->keys[index];
-    button->setDown(true);
+    if (event->isAutoRepeat() || event->key() < 48 || event->key() > 57) return;
+    this->pressKey(event->key());
 }
 
 void Piano::keyReleaseEvent(QKeyEvent* event) {
-    if (event->isAutoRepeat()) return;
-    this->audio->stopNote(event->key());
-
-    int index = event->key() - 48;
-    QPushButton* button = this->keys[index];
-    button->setDown(false);
+    if (event->isAutoRepeat() || event->key() < 48 || event->key() > 57) return;
+    this->releaseKey(event->key());
 }
 
 void Piano::redraw() {

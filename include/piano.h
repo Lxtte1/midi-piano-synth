@@ -14,6 +14,9 @@ class Piano : public QWidget {
     public:
         Piano(AudioManager& audioManager, QWidget* parent = nullptr);
 
+        void pressKey(int key);
+        void releaseKey(int key);
+
     protected:
         void resizeEvent(QResizeEvent* event) override;
         void keyPressEvent(QKeyEvent* event) override;
