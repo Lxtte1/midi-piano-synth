@@ -14,7 +14,7 @@ class Piano : public QWidget {
     public:
         Piano(AudioManager& audioManager, QWidget* parent = nullptr);
 
-        void pressKey(int key);
+        void pressKey(int key, double velocity = 1.0);
         void releaseKey(int key);
 
     protected:
@@ -29,6 +29,7 @@ class Piano : public QWidget {
 
         int whiteKeys = 0;
         std::vector<QPushButton*> keys;
+        double defaultVelocity = 0.5;
 };
 
 #pragma once

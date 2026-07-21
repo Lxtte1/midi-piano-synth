@@ -65,7 +65,7 @@ void MIDIInput::run() {
         
         switch (event->type) {
             case SND_SEQ_EVENT_NOTEON:
-                this->piano->pressKey(event->data.note.note);
+                this->piano->pressKey(event->data.note.note, event->data.note.velocity / 127.0);
                 break;
             case SND_SEQ_EVENT_NOTEOFF:
                 this->piano->releaseKey(event->data.note.note);

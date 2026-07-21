@@ -39,17 +39,22 @@ const double AudioManager::getFrequency(int key) {
     return 440.0 * pow(2.0, (key - 69) / 12.0);
 }
 
-const double AudioManager::harmonics(double phase, int n) {
-    double stretch = sqrt(1.0 + 0.0004 * n * n);
-    return sin(phase * n * stretch);
-}
+const float AudioManager::getAmplitude(Note& note) {
+    double value = 0.0;
+    
+    for (unsigned int i = 0; i < note.phases.size(); i++) {
+        double frequency = note.frequency * (i + 1);
+        double damping = 0.15 + 0.35 * frequency / 4000.0;
+        double amplitude = pow(i + 1, -1.25) * exp(-damping * (i + 1));
+        amplitude *= AudioManager::envelope(note, i + 1) * 0.5 * note.velocity;
 
-const double AudioManager::samplePhase(double phase) {
-    return (AudioManager::harmonics(phase, 1)
-            + AudioManager::harmonics(phase, 2) * 0.5
-            + AudioManager::harmonics(phase, 3) * 0.25
-            + AudioManager::harmonics(phase, 4) * 0.125
-            + AudioManager::harmonics(phase, 5) * 0.0625) / 1.9375;
+        note.phases[i] += frequency / AudioManager::rate;
+        if (note.phases[i] > 1) note.phases[i] -= 1;
+
+        value += amplitude * sin(note.phases[i] * 2 * M_PI);
+    }
+
+    return value;
 }
 
 const double AudioManager::envelope(double age) {
@@ -65,6 +70,24 @@ const double AudioManager::envelope(double age, double releasedAt) {
     double release = exp(-7.0 * (age - releasedAt));
 
     return attack * decay * release;
+}
+
+const double AudioManager::envelope(Note& note, int decayRate) {
+    // Config
+    const double attackTime = 0.004; // 4 ms
+    const double attackCoefficient = 3;
+    const double decayTime = 10; // 10 s
+    const double decayCoefficient = 12;
+    const double releaseTime = 0.12; // 120 ms
+
+    double value = 1;
+
+    if (note.age < attackTime) value = (1 - exp(-attackCoefficient * note.age / attackTime)) / (1 - exp(-attackCoefficient));
+    else value = (exp(-decayCoefficient * (note.age - attackTime) * decayRate / decayTime) - exp(-decayCoefficient)) / (1 - exp(-decayCoefficient));
+
+    if (!note.active) value *= 1 - (note.age - note.released) / releaseTime;
+
+    return std::max(value, 0.0);
 }
 
 const double AudioManager::amplitudeToDecibles(float sample) {
@@ -119,14 +142,18 @@ void AudioManager::compress(float* samples, double& targetReduction, double& smo
     }
 }
 
-void AudioManager::playNote(int note) {
-    this->data.notes[note] = { this->getFrequency(note), 0.0, 0.0, true, 0.0 };
+void AudioManager::playNote(int note, double velocity) {
+    this->data.notes[note] = { this->getFrequency(note), velocity, std::vector<double>(AudioManager::harmonics), 0.0, true, 0.0 };
+    
+    this->cleanupNotes();
 }
 
 void AudioManager::stopNote(int note) {
     Note& _note = this->data.notes[note];
     _note.active = false;
     _note.released = _note.age;
+    
+    this->cleanupNotes();
 }
 
 
@@ -144,16 +171,9 @@ void AudioManager::process(void* userdata) {
     for (unsigned int i = 0; i < frames; i++) {
         float sample = 0.0;
 
-        std::map<int, Note>::iterator j;
-        for (j = data->notes.begin(); j != data->notes.end(); j++) {
+        for (auto j = data->notes.begin(); j != data->notes.end(); j++) {
             Note& note = j->second;
-
-            note.phase += 2 * M_PI * note.frequency / AudioManager::rate;
-            if (note.phase >= 2 * M_PI) note.phase -= 2 * M_PI;
-
-            double value = sin(note.phase);
-            if (note.active) value *= envelope(note.age);
-            else value *= envelope(note.age, note.released);
+            float value = AudioManager::getAmplitude(note);
 
             sample += value * 0.5;
             note.age += 1.0 / AudioManager::rate;
@@ -163,15 +183,24 @@ void AudioManager::process(void* userdata) {
     }
 
     AudioManager::compress(dst, data->targetReduction, data->smoothReduction, frames);
-    // for (unsigned int i = 0; i < frames * AudioManager::channels; i++) dst[i] *= 32767.0;
 
     buffer->datas[0].chunk->offset = 0;
     buffer->datas[0].chunk->stride = stride;
     buffer->datas[0].chunk->size = frames * stride;
 
     pw_stream_queue_buffer(data->stream, b);
+
+    for (auto i = data->notes.begin(); i != data->notes.end();)
+        if (!i->second.active && (i->second.age - i->second.released) > 0.2) i = data->notes.erase(i);
+        else i++;
 }
 
 void AudioManager::run(Data* data) {
     pw_main_loop_run(data->loop);
+}
+
+void AudioManager::cleanupNotes() {
+    // for (auto i = this->data.notes.begin(); i != this->data.notes.end();)
+    //     if (i->second.age >= 1) this->data.notes.erase(i);
+    //     else i++;
 }

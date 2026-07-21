@@ -36,17 +36,21 @@ Piano::Piano(AudioManager& audioManager, QWidget* parent) : QWidget(parent) {
     this->redraw();
 }
 
-void Piano::pressKey(int key) {
-    this->audio->playNote(key);
+void Piano::pressKey(int key, double velocity) {
+    this->audio->playNote(key, this->defaultVelocity + velocity * (1 - this->defaultVelocity));
 
-    QPushButton* button = this->keys[key - 48];
+    int index = key - 48;
+    if (index < 0 || index >= this->keys.size()) return;
+    QPushButton* button = this->keys[index];
     button->setDown(true);
 }
 
 void Piano::releaseKey(int key) {
     this->audio->stopNote(key);
 
-    QPushButton* button = this->keys[key - 48];
+    int index = key - 48;
+    if (index < 0 || index >= this->keys.size()) return;
+    QPushButton* button = this->keys[index];
     button->setDown(false);
 }
 

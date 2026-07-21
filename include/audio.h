@@ -1,10 +1,12 @@
 #include <pipewire/pipewire.h>
 #include <thread>
+#include <vector>
 #include <map>
 
 struct Note {
     double frequency;
-    double phase;
+    double velocity;
+    std::vector<double> phases;
     double age;
 
     bool active;
@@ -27,12 +29,15 @@ class AudioManager {
 
         static const int rate = 44100;
         static const int channels = 2;
+        static const int harmonics = 10;
 
         static const double getFrequency(int key);
-        static const double harmonics(double phase, int n);
-        static const double samplePhase(double phase);
+        static const float getAmplitude(Note& note);
+
         static const double envelope(double age);
         static const double envelope(double age, double releasedAt);
+        static const double envelope(Note& note, int decayRate = 1);
+        
         static const double amplitudeToDecibles(float sample);
         static const double signedAmplitudeToDecibles(float sample);
         static const float deciblesToAmplitude(double db);
@@ -41,11 +46,13 @@ class AudioManager {
 
         static void compress(float* samples, double& targetReduction, double& smoothReduction, int frames);
 
-        void playNote(int note);
+        void playNote(int note, double velocity = 1.0);
         void stopNote(int note = -1);
     private:
         static void process(void* userdata);
         static void run(Data* data);
+
+        void cleanupNotes();
 
         std::thread runner;
         Data data;
