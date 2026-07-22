@@ -19,6 +19,8 @@ struct Data {
 
     double targetReduction;
     double smoothReduction;
+    double volume;
+
     std::map<int, Note> notes;
 };
 
@@ -32,7 +34,7 @@ class AudioManager {
         static const int harmonics = 10;
 
         static const double getFrequency(int key);
-        static const float getAmplitude(Note& note);
+        static const float getAmplitude(Note& note, double maxVolume = 0.5);
 
         static const double envelope(double age);
         static const double envelope(double age, double releasedAt);
@@ -48,11 +50,10 @@ class AudioManager {
 
         void playNote(int note, double velocity = 1.0);
         void stopNote(int note = -1);
+        void setMaximumVolume(double volume);
     private:
         static void process(void* userdata);
         static void run(Data* data);
-
-        void cleanupNotes();
 
         std::thread runner;
         Data data;

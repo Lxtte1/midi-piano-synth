@@ -10,7 +10,7 @@ AudioManager::AudioManager() {
 
     pw_init(nullptr, nullptr);
     
-    this->data = { nullptr, nullptr, 0.0, 0.0, std::map<int, Note>() };
+    this->data = { nullptr, nullptr, 0.0, 0.0, 0.5, std::map<int, Note>() };
     this->data.loop = pw_main_loop_new(NULL);
     pw_properties* properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY, "Playback", PW_KEY_MEDIA_ROLE, "Music",
                                                   PW_KEY_APP_NAME, "Digital Piano", PW_KEY_APP_ICON_NAME, "keyboard", NULL);
@@ -39,14 +39,14 @@ const double AudioManager::getFrequency(int key) {
     return 440.0 * pow(2.0, (key - 69) / 12.0);
 }
 
-const float AudioManager::getAmplitude(Note& note) {
+const float AudioManager::getAmplitude(Note& note, double maxVolume) {
     double value = 0.0;
     
     for (unsigned int i = 0; i < note.phases.size(); i++) {
         double frequency = note.frequency * (i + 1);
         double damping = 0.15 + 0.35 * frequency / 4000.0;
         double amplitude = pow(i + 1, -1.25) * exp(-damping * (i + 1));
-        amplitude *= AudioManager::envelope(note, i + 1) * 0.5 * note.velocity;
+        amplitude *= AudioManager::envelope(note, i + 1) * maxVolume * note.velocity;
 
         note.phases[i] += frequency / AudioManager::rate;
         if (note.phases[i] > 1) note.phases[i] -= 1;
@@ -144,18 +144,17 @@ void AudioManager::compress(float* samples, double& targetReduction, double& smo
 
 void AudioManager::playNote(int note, double velocity) {
     this->data.notes[note] = { this->getFrequency(note), velocity, std::vector<double>(AudioManager::harmonics), 0.0, true, 0.0 };
-    
-    this->cleanupNotes();
 }
 
 void AudioManager::stopNote(int note) {
     Note& _note = this->data.notes[note];
     _note.active = false;
     _note.released = _note.age;
-    
-    this->cleanupNotes();
 }
 
+void AudioManager::setMaximumVolume(double volume) {
+    this->data.volume = volume;
+}
 
 void AudioManager::process(void* userdata) {
     struct Data* data = (Data*)userdata;
@@ -173,7 +172,7 @@ void AudioManager::process(void* userdata) {
 
         for (auto j = data->notes.begin(); j != data->notes.end(); j++) {
             Note& note = j->second;
-            float value = AudioManager::getAmplitude(note);
+            float value = AudioManager::getAmplitude(note, data->volume);
 
             sample += value * 0.5;
             note.age += 1.0 / AudioManager::rate;
@@ -197,10 +196,4 @@ void AudioManager::process(void* userdata) {
 
 void AudioManager::run(Data* data) {
     pw_main_loop_run(data->loop);
-}
-
-void AudioManager::cleanupNotes() {
-    // for (auto i = this->data.notes.begin(); i != this->data.notes.end();)
-    //     if (i->second.age >= 1) this->data.notes.erase(i);
-    //     else i++;
 }
