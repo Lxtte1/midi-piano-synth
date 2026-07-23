@@ -1,0 +1,2 @@
+# MIDI Piano Synthesiser
+A simple Qt6 piano synthesiser for Linux.  It works with MIDI keyboards though asoundlib.  The audio engine runs on PipeWire and was created to mimic real piano keys as closely as possible.
