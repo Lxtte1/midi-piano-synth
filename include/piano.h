@@ -17,6 +17,9 @@ class Piano : public QWidget {
         void pressKey(int key, double velocity = 1.0);
         void releaseKey(int key);
         void setDefaultVelocity(double velocity);
+        int getOctave();
+        int getWhiteKeysCount();
+        bool isReady();
 
         bool showLabels = true;
 
@@ -34,6 +37,7 @@ class Piano : public QWidget {
         int octave;
         std::vector<QPushButton*> keys;
         double defaultVelocity = 0.5;
+        bool initiated = false;
 };
 
 #pragma once

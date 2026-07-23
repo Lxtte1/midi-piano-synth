@@ -5,9 +5,7 @@
 
 Piano::Piano(AudioManager& audioManager, QWidget* parent) : Piano(audioManager, 25, 3, parent) {}
 
-Piano::Piano(AudioManager& audioManager, int numKeys, int octave, QWidget* parent) : QWidget(parent) {
-    this->audio = &audioManager;
-
+Piano::Piano(AudioManager& audioManager, int numKeys, int octave, QWidget* parent) : QWidget(parent), audio(&audioManager) {
     this->initiate(numKeys, octave);
 }
 
@@ -33,6 +31,18 @@ void Piano::setDefaultVelocity(double velocity) {
     this->defaultVelocity = velocity;
 }
 
+int Piano::getOctave() {
+    return this->octave;
+}
+
+int Piano::getWhiteKeysCount() {
+    return this->whiteKeys;
+}
+
+bool Piano::isReady() {
+    return this->initiated;
+}
+
 void Piano::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     this->redraw();
@@ -49,6 +59,8 @@ void Piano::keyReleaseEvent(QKeyEvent* event) {
 }
 
 void Piano::initiate(int numKeys, int octave) {
+    this->initiated = false;
+
     this->setMinimumSize(numKeys * 50, 400);
     this->octave = octave;
     this->whiteKeys = 0;
@@ -87,6 +99,7 @@ void Piano::initiate(int numKeys, int octave) {
     }
 
     this->redraw();
+    this->initiated = true;
 }
 
 void Piano::redraw() {
@@ -106,7 +119,7 @@ void Piano::redraw() {
 
             blackIndex++;
         } else {
-            button->setGeometry(whiteIndex * whiteKeyWidth, 0, whiteKeyWidth, this->height());
+            button->setGeometry(whiteIndex * whiteKeyWidth, 0, (i == this->keys.size() - 1 ? this->width() - whiteKeyWidth * whiteIndex : whiteKeyWidth), this->height());
             
             whiteIndex++;
         }
