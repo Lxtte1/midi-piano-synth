@@ -49,6 +49,8 @@ int main(int argc, char* argv[]) {
     settings.onDeviceChange([&midi](int index) {
         midi.pickClient(index);
     });
+
+    // midi.playFile("temp/music.mid");
     
     return app.exec();
 }

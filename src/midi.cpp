@@ -1,8 +1,8 @@
-#include "midi.h"
-
 #include <alsa/asoundlib.h>
 #include <cstdio>
-#include <vector>
+#include <chrono>
+
+#include "midi.h"
 
 MIDIInput::MIDIInput(Piano& piano) {
     this->piano = &piano;
@@ -75,10 +75,42 @@ void MIDIInput::pickClient(int index) {
     this->runner = std::thread(&MIDIInput::run, this);
 }
 
+// void MIDIInput::playFile(QString file) {
+//     smf::MidiFile midifile;
+//     midifile.read(file.toStdString());
+//     midifile.doTimeAnalysis();
+//     midifile.linkNotePairs();
+
+//     int tracks = midifile.getTrackCount();
+//     this->events = midifile[1];
+// }
+
 void MIDIInput::run() {
     this->running = true;
 
+    // double time = 0.0;
+    // int i = 0;
+    // auto previous = std::chrono::high_resolution_clock::now();
+
     while (this->running) {
+        // auto now = std::chrono::high_resolution_clock::now();
+        // double delta = std::chrono::duration<double>(now - previous).count();
+        // previous = now;
+
+        // if (this->events.size() > 0 && i < this->events.getEventCount()) {
+        //     smf::MidiEvent event = this->events[i];
+        //     printf("%i %f %f\n", event.isNote(), event.seconds, time);
+
+        //     if (event.isNote() && event.seconds <= time) {
+        //         printf("%i\n", event.getKeyNumber());
+        //         if (event.isNoteOn()) this->piano->pressKey(event.getKeyNumber(), event.getVelocity() / 127.0);
+        //         if (event.isNoteOff()) this->piano->releaseKey(event.getKeyNumber());
+        //         i++;
+        //     } else if (!event.isNote()) i++;
+
+        //     time += delta;
+        // }
+
         snd_seq_event_t* event = nullptr;
         if (snd_seq_event_input(this->seq, &event) <= 0) continue;
         
