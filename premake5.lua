@@ -2,7 +2,7 @@ workspace "Digital Piano"
     configurations { "Debug" }
     platforms { "x64" }
 
--- require "midifile"
+require "midifile"
 
 project "DigitalPiano"
     kind "ConsoleApp"
@@ -14,7 +14,7 @@ project "DigitalPiano"
 
     files { "src/**.cpp" }
     includedirs { "include", "/usr/include/qt6", "/usr/include/qt6/QtCore", "/usr/include/qt6/QtWidgets", "/usr/include/qt6/QtGui", "/usr/include/pipewire-0.3", "/usr/include/spa-0.2", "midifile/include" }
-    links { "Qt6Core", "Qt6Widgets", "Qt6Gui", "pipewire-0.3", "asound" }
+    links { "Qt6Core", "Qt6Widgets", "Qt6Gui", "pipewire-0.3", "asound", "midifile" }
 
     filter "system:linux"
         buildoptions { "-fPIC" }

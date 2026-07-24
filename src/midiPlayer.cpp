@@ -1,4 +1,5 @@
 #include <QVBoxLayout>
+#include <MidiFile.h>
 #include <map>
 
 #include "midiPlayer.h"
@@ -27,62 +28,27 @@ MidiPlayer::MidiPlayer(Piano& piano, QWidget* parent) : QWidget(parent), piano(&
 MidiPlayer::~MidiPlayer() {
 }
 
+bool MidiPlayer::loadFile(QString path, int track) {
+    smf::MidiFile file;
+    file.read(path.toStdString());
+    file.doTimeAnalysis();
+    file.linkNotePairs();
+
+    if (track >= file.getTrackCount()) return false;
+    smf::MidiEventList midiEvents = file[track];
+
+    for (unsigned int i = 0; i < midiEvents.getEventCount(); i++) {
+        smf::MidiEvent event = midiEvents[i];
+
+        if (event.isNote()) this->events.push_back({ event.seconds, event.isNoteOn(), event.getKeyNumber(), event.getVelocity() / 127.0 });
+    }
+
+    return true;
+}
+
 void MidiPlayer::start() {
     this->stop();
-
-    // Temporary (Mary had a little lamb)
-    this->events.push_back({ 0.0, true, 64 });
-    this->events.push_back({ 0.0 + 1.0, false, 64 });
-    this->events.push_back({ 1.0, true, 62 });
-    this->events.push_back({ 1.0 + 1.0, false, 62 });
-    this->events.push_back({ 2.0, true, 60 });
-    this->events.push_back({ 2.0 + 1.0, false, 60 });
-    this->events.push_back({ 3.0, true, 62 });
-    this->events.push_back({ 3.0 + 1.0, false, 62 });
-    this->events.push_back({ 4.0, true, 64 });
-    this->events.push_back({ 4.0 + 1.0, false, 64 });
-    this->events.push_back({ 5.0, true, 64 });
-    this->events.push_back({ 5.0 + 1.0, false, 64 });
-    this->events.push_back({ 6.0, true, 64 });
-    this->events.push_back({ 6.0 + 1.0, false, 64 });
-    this->events.push_back({ 7.0, true, 62 });
-    this->events.push_back({ 7.0 + 1.0, false, 62 });
-    this->events.push_back({ 8.0, true, 62 });
-    this->events.push_back({ 8.0 + 1.0, false, 62 });
-    this->events.push_back({ 9.0, true, 62 });
-    this->events.push_back({ 9.0 + 1.0, false, 62 });
-    this->events.push_back({ 10.0, true, 64 });
-    this->events.push_back({ 10.0 + 1.0, false, 64 });
-    this->events.push_back({ 11.0, true, 67 });
-    this->events.push_back({ 11.0 + 1.0, false, 67 });
-    this->events.push_back({ 12.0, true, 67 });
-    this->events.push_back({ 12.0 + 1.0, false, 67 });
-    this->events.push_back({ 13.0, true, 64 });
-    this->events.push_back({ 13.0 + 1.0, false, 64 });
-    this->events.push_back({ 14.0, true, 62 });
-    this->events.push_back({ 14.0 + 1.0, false, 62 });
-    this->events.push_back({ 15.0, true, 60 });
-    this->events.push_back({ 15.0 + 1.0, false, 60 });
-    this->events.push_back({ 16.0, true, 62 });
-    this->events.push_back({ 16.0 + 1.0, false, 62 });
-    this->events.push_back({ 17.0, true, 64 });
-    this->events.push_back({ 17.0 + 1.0, false, 64 });
-    this->events.push_back({ 18.0, true, 64 });
-    this->events.push_back({ 18.0 + 1.0, false, 64 });
-    this->events.push_back({ 19.0, true, 64 });
-    this->events.push_back({ 19.0 + 1.0, false, 64 });
-    this->events.push_back({ 20.0, true, 64 });
-    this->events.push_back({ 20.0 + 1.0, false, 64 });
-    this->events.push_back({ 21.0, true, 64 });
-    this->events.push_back({ 21.0 + 1.0, false, 64 });
-    this->events.push_back({ 22.0, true, 64 });
-    this->events.push_back({ 22.0 + 1.0, false, 64 });
-    this->events.push_back({ 23.0, true, 62 });
-    this->events.push_back({ 23.0 + 1.0, false, 62 });
-    this->events.push_back({ 24.0, true, 62 });
-    this->events.push_back({ 24.0 + 1.0, false, 62 });
-    this->events.push_back({ 25.0, true, 60 });
-    this->events.push_back({ 25.0 + 1.0, false, 60 });
+    if (this->events.size() <= 0) return;
 
     std::map<int, Note> key;
     for (unsigned int i = 0; i < this->events.size(); i++) {
@@ -149,7 +115,7 @@ void MidiPlayer::advance() {
         Event& event = this->events[i];
         if (delta < event.time) continue;
 
-        if (event.active) this->piano->pressKey(event.key);
+        if (event.active) this->piano->pressKey(event.key, event.velocity);
         else this->piano->releaseKey(event.key);
 
         this->events.erase(this->events.begin() + i);

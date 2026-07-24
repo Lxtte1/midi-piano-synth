@@ -41,16 +41,14 @@ int main(int argc, char* argv[]) {
         manager.setMaximumVolume(volume);
     });
     
-    
     MIDIInput midi(piano);
     settings.getDevicesCallback([&midi]() { return midi.getClientNames(); });
     settings.onDeviceChange([&midi](int index) { midi.pickClient(index); });
 
     MidiPlayer player(piano, &window);
     mainLayout->addWidget(&player, 0, 1);
-    player.start();
-
-    // midi.playFile("temp/music.mid");
+    if (player.loadFile("temp/music.mid", 1))
+        player.start();
     
     window.resize(mainLayout->minimumSize());
     return app.exec();

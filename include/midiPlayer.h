@@ -12,6 +12,7 @@ class MidiPlayer : public QWidget {
         MidiPlayer(Piano& piano, QWidget* parent = nullptr);
         ~MidiPlayer();
 
+        bool loadFile(QString path, int track = 0);
         void start();
         void stop();
 
@@ -27,6 +28,7 @@ class MidiPlayer : public QWidget {
             double time;
             bool active;
             int key;
+            double velocity;
         };
 
     private:
