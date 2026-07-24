@@ -1,4 +1,5 @@
 #include <QVBoxLayout>
+#include <map>
 
 #include "midiPlayer.h"
 
@@ -30,35 +31,69 @@ void MidiPlayer::start() {
     this->stop();
 
     // Temporary (Mary had a little lamb)
-    this->notes.push_back({ 0.0, 1.0, 62 });
-    this->notes.push_back({ 1.0, 1.0, 61 });
-    this->notes.push_back({ 2.0, 1.0, 60 });
-    this->notes.push_back({ 3.0, 1.0, 61 });
-    this->notes.push_back({ 4.0, 1.0, 62 });
-    this->notes.push_back({ 5.0, 1.0, 62 });
-    this->notes.push_back({ 6.0, 1.0, 62 });
-    this->notes.push_back({ 7.0, 1.0, 61 });
-    this->notes.push_back({ 8.0, 1.0, 61 });
-    this->notes.push_back({ 9.0, 1.0, 61 });
-    this->notes.push_back({ 10.0, 1.0, 62 });
-    this->notes.push_back({ 11.0, 1.0, 64 });
-    this->notes.push_back({ 12.0, 1.0, 64 });
-    this->notes.push_back({ 13.0, 1.0, 62 });
-    this->notes.push_back({ 14.0, 1.0, 61 });
-    this->notes.push_back({ 15.0, 1.0, 60 });
-    this->notes.push_back({ 16.0, 1.0, 61 });
-    this->notes.push_back({ 17.0, 1.0, 62 });
-    this->notes.push_back({ 18.0, 1.0, 62 });
-    this->notes.push_back({ 19.0, 1.0, 62 });
-    this->notes.push_back({ 20.0, 1.0, 62 });
-    this->notes.push_back({ 21.0, 1.0, 62 });
-    this->notes.push_back({ 22.0, 1.0, 62 });
-    this->notes.push_back({ 23.0, 1.0, 61 });
-    this->notes.push_back({ 24.0, 1.0, 61 });
-    this->notes.push_back({ 25.0, 1.0, 60 });
+    this->events.push_back({ 0.0, true, 64 });
+    this->events.push_back({ 0.0 + 1.0, false, 64 });
+    this->events.push_back({ 1.0, true, 62 });
+    this->events.push_back({ 1.0 + 1.0, false, 62 });
+    this->events.push_back({ 2.0, true, 60 });
+    this->events.push_back({ 2.0 + 1.0, false, 60 });
+    this->events.push_back({ 3.0, true, 62 });
+    this->events.push_back({ 3.0 + 1.0, false, 62 });
+    this->events.push_back({ 4.0, true, 64 });
+    this->events.push_back({ 4.0 + 1.0, false, 64 });
+    this->events.push_back({ 5.0, true, 64 });
+    this->events.push_back({ 5.0 + 1.0, false, 64 });
+    this->events.push_back({ 6.0, true, 64 });
+    this->events.push_back({ 6.0 + 1.0, false, 64 });
+    this->events.push_back({ 7.0, true, 62 });
+    this->events.push_back({ 7.0 + 1.0, false, 62 });
+    this->events.push_back({ 8.0, true, 62 });
+    this->events.push_back({ 8.0 + 1.0, false, 62 });
+    this->events.push_back({ 9.0, true, 62 });
+    this->events.push_back({ 9.0 + 1.0, false, 62 });
+    this->events.push_back({ 10.0, true, 64 });
+    this->events.push_back({ 10.0 + 1.0, false, 64 });
+    this->events.push_back({ 11.0, true, 67 });
+    this->events.push_back({ 11.0 + 1.0, false, 67 });
+    this->events.push_back({ 12.0, true, 67 });
+    this->events.push_back({ 12.0 + 1.0, false, 67 });
+    this->events.push_back({ 13.0, true, 64 });
+    this->events.push_back({ 13.0 + 1.0, false, 64 });
+    this->events.push_back({ 14.0, true, 62 });
+    this->events.push_back({ 14.0 + 1.0, false, 62 });
+    this->events.push_back({ 15.0, true, 60 });
+    this->events.push_back({ 15.0 + 1.0, false, 60 });
+    this->events.push_back({ 16.0, true, 62 });
+    this->events.push_back({ 16.0 + 1.0, false, 62 });
+    this->events.push_back({ 17.0, true, 64 });
+    this->events.push_back({ 17.0 + 1.0, false, 64 });
+    this->events.push_back({ 18.0, true, 64 });
+    this->events.push_back({ 18.0 + 1.0, false, 64 });
+    this->events.push_back({ 19.0, true, 64 });
+    this->events.push_back({ 19.0 + 1.0, false, 64 });
+    this->events.push_back({ 20.0, true, 64 });
+    this->events.push_back({ 20.0 + 1.0, false, 64 });
+    this->events.push_back({ 21.0, true, 64 });
+    this->events.push_back({ 21.0 + 1.0, false, 64 });
+    this->events.push_back({ 22.0, true, 64 });
+    this->events.push_back({ 22.0 + 1.0, false, 64 });
+    this->events.push_back({ 23.0, true, 62 });
+    this->events.push_back({ 23.0 + 1.0, false, 62 });
+    this->events.push_back({ 24.0, true, 62 });
+    this->events.push_back({ 24.0 + 1.0, false, 62 });
+    this->events.push_back({ 25.0, true, 60 });
+    this->events.push_back({ 25.0 + 1.0, false, 60 });
 
-    // int startKey = (this->piano->getOctave() + 1) * 12;
-    // double width = this->width() / this->piano->getWhiteKeysCount();
+    std::map<int, Note> key;
+    for (unsigned int i = 0; i < this->events.size(); i++) {
+        Event& event = this->events[i];
+
+        if (event.active) key[event.key] = {event.time, 0.0, event.key};
+        else {
+            key[event.key].duration = event.time - key[event.key].time;
+            this->notes.push_back(key[event.key]);
+        }
+    }
 
     for (unsigned int i = 0; i < this->notes.size(); i++) {
         Note& note = this->notes[i];
@@ -66,11 +101,6 @@ void MidiPlayer::start() {
         QGraphicsRectItem* item = new QGraphicsRectItem(100, 100, 100, 100);
         item->setBrush(i % 2 == 0 ? Qt::blue : Qt::red);
         item->setPen(Qt::NoPen);
-
-        // QWidget* rect = new QWidget(this);
-        // rect->setStyleSheet("background-color: blue; border: none");
-        // rect->setGeometry((note.key - startKey) * width, this->height() - (note.time * speed) - note.duration * this->speed, width, note.duration * this->speed);
-        // rect->show();
 
         this->scene->addItem(item);
         note.rect = item;
@@ -94,13 +124,13 @@ void MidiPlayer::advance() {
 
     if (!this->piano->isReady() || this->piano->getWhiteKeysCount() <= 0) return;
 
-    int startKey = (this->piano->getOctave() + 1) * 12;
     double width = this->width() / this->piano->getWhiteKeysCount();
 
     for (unsigned int i = 0; i < this->notes.size(); i++) {
         Note& note = this->notes[i];
         QGraphicsRectItem* rect = note.rect;
         if (rect == nullptr) continue;
+        int noteIndex = KEY_COLOUR[note.key % 12] ? this->piano->codeToColourIndex(note.key - 1) : this->piano->codeToColourIndex(note.key);
 
         int y = this->height() - (note.time * this->speed) - note.duration * this->speed + delta * this->speed;
 
@@ -110,8 +140,21 @@ void MidiPlayer::advance() {
 
             this->notes.erase(this->notes.begin() + i);
             i--;
-        } else rect->setRect((note.key - startKey) * width, y, width, note.duration * this->speed);
+        } else
+            if (KEY_COLOUR[note.key % 12]) rect->setRect((noteIndex + 0.75) * width, y, width / 2, note.duration * this->speed);
+            else rect->setRect(noteIndex * width, y, width, note.duration * this->speed);
     }
 
-    if (this->notes.size() <= 0) this->stop();
+    for (unsigned int i = 0; i < this->events.size(); i++) {
+        Event& event = this->events[i];
+        if (delta < event.time) continue;
+
+        if (event.active) this->piano->pressKey(event.key);
+        else this->piano->releaseKey(event.key);
+
+        this->events.erase(this->events.begin() + i);
+        i--;
+    }
+
+    if (this->notes.size() <= 0 && this->events.size() <= 0) this->stop();
 }

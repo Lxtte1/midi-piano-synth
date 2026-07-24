@@ -43,6 +43,14 @@ bool Piano::isReady() {
     return this->initiated;
 }
 
+const int Piano::codeToKey(int code) {
+    return ((int)(code / 12) - 1) * (KEY_COLOUR[code % 12] ? 5 : 7) + KEYS_BEFORE[code % 12];
+}
+
+const int Piano::codeToColourIndex(int code) {
+    return Piano::codeToKey(code) - this->octave * (KEY_COLOUR[code % 12] ? 5 : 7);
+}
+
 void Piano::resizeEvent(QResizeEvent* event) {
     QWidget::resizeEvent(event);
     this->redraw();
@@ -90,11 +98,11 @@ void Piano::initiate(int numKeys, int octave) {
         if (!KEY_COLOUR[i % 12]) this->whiteKeys++;
 
         QObject::connect(button, &QPushButton::pressed, [=]() {
-            this->audio->playNote(i + (octave + 1) * 12);
+            this->pressKey(i + (octave + 1) * 12);
         });
 
         QObject::connect(button, &QPushButton::released, [=]() {
-            this->audio->stopNote(i + (octave + 1) * 12);
+            this->releaseKey(i + (octave + 1) * 12);
         });
     }
 

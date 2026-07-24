@@ -23,6 +23,12 @@ class MidiPlayer : public QWidget {
             QGraphicsRectItem* rect;
         };
 
+        struct Event {
+            double time;
+            bool active;
+            int key;
+        };
+
     private:
         void advance();
 
@@ -30,6 +36,7 @@ class MidiPlayer : public QWidget {
 
         Piano* piano;
         std::vector<Note> notes;
+        std::vector<Event> events;
         QGraphicsScene* scene;
         QGraphicsView* view;
         QTimer* runner = nullptr;

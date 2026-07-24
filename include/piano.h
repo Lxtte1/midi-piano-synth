@@ -5,8 +5,9 @@
 #include "audio.h"
 #include <vector>
 
-const bool KEY_COLOUR[] = { false, true, false, true, false, false, true, false, true, false, true, false };
-const char KEYS[] = { 'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B' };
+static const bool KEY_COLOUR[] = { false, true, false, true, false, false, true, false, true, false, true, false };
+static const char KEYS[] = { 'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B' };
+static const int KEYS_BEFORE[] = { 0, 0, 1, 1, 2, 3, 2, 4, 3, 5, 4, 6 };
 
 class Piano : public QWidget {
     public:
@@ -20,6 +21,8 @@ class Piano : public QWidget {
         int getOctave();
         int getWhiteKeysCount();
         bool isReady();
+        static const int codeToKey(int code);
+        const int codeToColourIndex(int code);
 
         bool showLabels = true;
 
