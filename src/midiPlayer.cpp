@@ -1,3 +1,4 @@
+#include <QLinearGradient>
 #include <QVBoxLayout>
 #include <MidiFile.h>
 #include <map>
@@ -35,6 +36,8 @@ bool MidiPlayer::loadFile(QString path, int track) {
     file.linkNotePairs();
 
     if (track >= file.getTrackCount()) return false;
+    this->events.clear();
+
     smf::MidiEventList midiEvents = file[track];
 
     for (unsigned int i = 0; i < midiEvents.getEventCount(); i++) {
@@ -65,7 +68,7 @@ void MidiPlayer::start() {
         Note& note = this->notes[i];
 
         QGraphicsRectItem* item = new QGraphicsRectItem(100, 100, 100, 100);
-        item->setBrush(i % 2 == 0 ? Qt::blue : Qt::red);
+        item->setBrush(NOTE_COLOURS[note.key % 12]);
         item->setPen(Qt::NoPen);
 
         this->scene->addItem(item);
@@ -76,17 +79,35 @@ void MidiPlayer::start() {
     QObject::connect(this->runner, &QTimer::timeout, this, &MidiPlayer::advance);
 
     this->startTime = std::chrono::high_resolution_clock::now();
+    this->playing = true;
     this->runner->start(16);
 }
 
 void MidiPlayer::stop() {
     if (this->runner && this->runner->isActive()) this->runner->stop();
+    this->playing = false;
+
+    while (this->notes.size() > 0) {
+        this->scene->removeItem(this->notes[0].rect);
+        delete this->notes[0].rect;
+        this->notes.erase(this->notes.begin());
+    }
+}
+
+void MidiPlayer::resume() {
+    this->playing = true;
+}
+
+void MidiPlayer::pause() {
+    this->playing = false;
 }
 
 void MidiPlayer::advance() {
-    auto now = std::chrono::high_resolution_clock::now();
+    std::chrono::system_clock::time_point now = std::chrono::high_resolution_clock::now();
     double delta = std::chrono::duration<double>(now - this->startTime).count();
+    this->startTime = now;
     this->scene->setSceneRect(0, 0, this->width(), this->height());
+    if (this->playing) this->time += delta;
 
     if (!this->piano->isReady() || this->piano->getWhiteKeysCount() <= 0) return;
 
@@ -98,7 +119,7 @@ void MidiPlayer::advance() {
         if (rect == nullptr) continue;
         int noteIndex = KEY_COLOUR[note.key % 12] ? this->piano->codeToColourIndex(note.key - 1) : this->piano->codeToColourIndex(note.key);
 
-        int y = this->height() - (note.time * this->speed) - note.duration * this->speed + delta * this->speed;
+        int y = this->height() - (note.time * this->speed) - note.duration * this->speed + this->time * this->speed;
 
         if (y > this->height()) {;
             this->scene->removeItem(rect);
@@ -113,7 +134,7 @@ void MidiPlayer::advance() {
 
     for (unsigned int i = 0; i < this->events.size(); i++) {
         Event& event = this->events[i];
-        if (delta < event.time) continue;
+        if (this->time < event.time) continue;
 
         if (event.active) this->piano->pressKey(event.key, event.velocity);
         else this->piano->releaseKey(event.key);

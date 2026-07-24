@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
 
     MidiPlayer player(piano, &window);
     mainLayout->addWidget(&player, 0, 1);
-    if (player.loadFile("temp/music.mid", 1))
-        player.start();
+    settings.onFileSelect([&player](QString file) { if (player.loadFile(file)) player.start(); });
+    settings.onFilePlay([&player](bool play) { if (play) player.resume(); else player.pause(); });
     
     window.resize(mainLayout->minimumSize());
     return app.exec();

@@ -7,14 +7,33 @@
 #include <vector>
 #include <chrono>
 
+static const QColor NOTE_COLOURS[12] =
+{
+    QColor("#ff5555"),
+    QColor("#ff8844"),
+    QColor("#ffaa33"),
+    QColor("#ffdd33"),
+    QColor("#aadd33"),
+    QColor("#55dd55"),
+    QColor("#33dddd"),
+    QColor("#3399ff"),
+    QColor("#6666ff"),
+    QColor("#aa66ff"),
+    QColor("#dd55dd"),
+    QColor("#ff66aa")
+};
+
 class MidiPlayer : public QWidget {
     public:
         MidiPlayer(Piano& piano, QWidget* parent = nullptr);
         ~MidiPlayer();
 
-        bool loadFile(QString path, int track = 0);
+        bool loadFile(QString path, int track = 1);
         void start();
         void stop();
+
+        void resume();
+        void pause();
 
         struct Note {
             double time;
@@ -34,7 +53,9 @@ class MidiPlayer : public QWidget {
     private:
         void advance();
 
-        double speed = 100.0;
+        double speed = 200.0;
+        bool playing = false;
+        double time = 0.0;
 
         Piano* piano;
         std::vector<Note> notes;
@@ -42,7 +63,7 @@ class MidiPlayer : public QWidget {
         QGraphicsScene* scene;
         QGraphicsView* view;
         QTimer* runner = nullptr;
-        std::chrono::_V2::system_clock::time_point startTime;
+        std::chrono::system_clock::time_point startTime;
 };
 
 #pragma once
