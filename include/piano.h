@@ -1,12 +1,14 @@
 #include <QResizeEvent>
 #include <QPushButton>
+#include <functional>
 #include <QKeyEvent>
 #include <QWidget>
 #include "audio.h"
 #include <vector>
 
-const bool KEY_COLOUR[] = { false, true, false, true, false, false, true, false, true, false, true, false };
-const char KEYS[] = { 'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B' };
+static const bool KEY_COLOUR[] = { false, true, false, true, false, false, true, false, true, false, true, false };
+static const char KEYS[] = { 'C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B' };
+static const int KEYS_BEFORE[] = { 0, 0, 1, 1, 2, 3, 2, 4, 3, 5, 4, 6 };
 
 class Piano : public QWidget {
     public:
@@ -17,6 +19,15 @@ class Piano : public QWidget {
         void pressKey(int key, double velocity = 1.0);
         void releaseKey(int key);
         void setDefaultVelocity(double velocity);
+        int getOctave();
+        int getWhiteKeysCount();
+        bool isReady();
+        static const int codeToKey(int code);
+        const int codeToColourIndex(int code);
+        std::vector<int> getPressedKeys();
+
+        void onKeyPressed(std::function<void(int)> callback);
+        void onKeyReleased(std::function<void(int)> callback);
 
         bool showLabels = true;
 
@@ -34,6 +45,10 @@ class Piano : public QWidget {
         int octave;
         std::vector<QPushButton*> keys;
         double defaultVelocity = 0.5;
+        bool initiated = false;
+        std::vector<int> pressedKeys;
+        std::vector<std::function<void(int)>> keyPressCallbacks;
+        std::vector<std::function<void(int)>> keyReleaseCallbacks;
 };
 
 #pragma once

@@ -12,6 +12,9 @@ class Settings : public QWidget {
         void onVolumeChange(std::function<void(double, double)> callback);
         void onKeyboardChange(std::function<void(bool, int, int)> callback);
         void onDeviceChange(std::function<void(int)> callback);
+        void onFileSelect(std::function<void(QString)> callback);
+        void onFilePlay(std::function<void(bool)> callback);
+        void onTraningChange(std::function<void(bool)> callback);
 
         void getDevicesCallback(std::function<QStringList()> call);
 
@@ -23,6 +26,9 @@ class Settings : public QWidget {
         std::function<void(double, double)> volumeCallback;
         std::function<void(bool, int, int)> keyboardCallback;
         std::function<void(int)> deviceCallback;
+        std::function<void(QString)> fileSelectCallback;
+        std::function<void(bool)> filePlayCallback;
+        std::function<void(bool)> trainingCallback;
 
         std::function<QStringList()> getDevices;
 

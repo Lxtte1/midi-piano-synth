@@ -1,7 +1,8 @@
 #include <QApplication>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QWidget>
 
+#include "midiPlayer.h"
 #include "settings.h"
 #include "piano.h"
 #include "audio.h"
@@ -11,23 +12,23 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     
     QWidget window;
-    window.resize(800, 600);
     window.setWindowTitle("Digital Piano");
     window.show();
 
-    QHBoxLayout* mainLayout = new QHBoxLayout(&window);
+    QGridLayout* mainLayout = new QGridLayout(&window);
     mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(5);
-    
+    mainLayout->setVerticalSpacing(0);
+    mainLayout->setHorizontalSpacing(5);
+
     Settings settings(&window);
     settings.show();
-    mainLayout->addWidget(&settings);
+    mainLayout->addWidget(&settings, 0, 0, 2, 1);
 
     AudioManager manager;
     Piano piano(manager, &window);
     piano.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     piano.show();
-    mainLayout->addWidget(&piano);
+    mainLayout->addWidget(&piano, 1, 1);
 
     settings.onKeyboardChange([&piano](bool labels, int keys, int octave) {
         piano.showLabels = labels;
@@ -39,18 +40,16 @@ int main(int argc, char* argv[]) {
         manager.setMaximumVolume(volume);
     });
     
-    
     MIDIInput midi(piano);
+    settings.getDevicesCallback([&midi]() { return midi.getClientNames(); });
+    settings.onDeviceChange([&midi](int index) { midi.pickClient(index); });
 
-    settings.getDevicesCallback([&midi]() {
-        return midi.getClientNames();
-    });
-
-    settings.onDeviceChange([&midi](int index) {
-        midi.pickClient(index);
-    });
-
-    // midi.playFile("temp/music.mid");
+    MidiPlayer player(piano, &window);
+    mainLayout->addWidget(&player, 0, 1);
+    settings.onFileSelect([&player](QString file) { if (player.loadFile(file)) player.start(); });
+    settings.onFilePlay([&player](bool play) { if (play) player.resume(); else player.pause(); });
+    settings.onTraningChange([&player](bool training) { player.setTraining(training); });
     
+    window.resize(mainLayout->minimumSize());
     return app.exec();
 }

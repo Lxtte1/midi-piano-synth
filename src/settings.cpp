@@ -1,6 +1,7 @@
 #include <QVBoxLayout>
 #include <QGridLayout>
 #include <QPushButton>
+#include <QFileDialog>
 #include <QLabel>
 
 #include "settings.h"
@@ -9,6 +10,52 @@ Settings::Settings(QWidget* parent) : QWidget(parent) {
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setAlignment(Qt::AlignBottom);
+
+    {
+        QGridLayout* fileSettings = new QGridLayout(this);
+        layout->addLayout(fileSettings);
+
+        {
+            QPushButton* button = new QPushButton(QString("Play File"), this);
+            fileSettings->addWidget(button, 0, 0, 1, 2);
+
+            QObject::connect(button, &QPushButton::pressed, this, [=]() {
+                QString filename = QFileDialog::getOpenFileName(this, "Open MIDI file", QDir::homePath(), "MIDI Files (*.mid *.midi);;All Files (*)");
+                if (!filename.isEmpty()) this->fileSelectCallback(filename);
+            });
+        }
+
+        {
+            QPushButton* button = new QPushButton(QString("Play"), this);
+            fileSettings->addWidget(button, 1, 0);
+
+            QObject::connect(button, &QPushButton::pressed, this, [=]() { this->filePlayCallback(true); });
+        }
+
+        {
+            QPushButton* button = new QPushButton(QString("Pause"), this);
+            fileSettings->addWidget(button, 1, 1);
+
+            QObject::connect(button, &QPushButton::pressed, this, [=]() { this->filePlayCallback(false); });
+        }
+    }
+
+    {
+        QGridLayout* playerSettings = new QGridLayout(this);
+        playerSettings->setAlignment(Qt::AlignLeft);
+        layout->addLayout(playerSettings);
+
+        {
+            QCheckBox* box = new QCheckBox();
+            playerSettings->addWidget(box, 0, 0);
+
+            QLabel* label = new QLabel(QString("Training mode"), this);
+            playerSettings->addWidget(label, 0, 1, Qt::AlignLeft);
+
+            QObject::connect(box, &QCheckBox::stateChanged, this, [=]() { this->trainingCallback(box->isChecked()); });
+        }
+    }
+
     layout->addStretch(1);
 
     {
@@ -115,6 +162,18 @@ void Settings::onKeyboardChange(std::function<void(bool, int, int)> callback) {
 
 void Settings::onDeviceChange(std::function<void(int)> callback) {
     this->deviceCallback = callback;
+}
+
+void Settings::onFileSelect(std::function<void(QString)> callback) {
+    this->fileSelectCallback = callback;
+}
+
+void Settings::onFilePlay(std::function<void(bool)> callback) {
+    this->filePlayCallback = callback;
+}
+
+void Settings::onTraningChange(std::function<void(bool)> callback) {
+    this->trainingCallback = callback;
 }
 
 void Settings::getDevicesCallback(std::function<QStringList()> call) {

@@ -5,9 +5,7 @@
 
 Piano::Piano(AudioManager& audioManager, QWidget* parent) : Piano(audioManager, 25, 3, parent) {}
 
-Piano::Piano(AudioManager& audioManager, int numKeys, int octave, QWidget* parent) : QWidget(parent) {
-    this->audio = &audioManager;
-
+Piano::Piano(AudioManager& audioManager, int numKeys, int octave, QWidget* parent) : QWidget(parent), audio(&audioManager) {
     this->initiate(numKeys, octave);
 }
 
@@ -18,6 +16,9 @@ void Piano::pressKey(int key, double velocity) {
     if (index < 0 || index >= this->keys.size()) return;
     QPushButton* button = this->keys[index];
     button->setDown(true);
+    this->pressedKeys.push_back(key);
+
+    for (unsigned int i = 0; i < this->keyPressCallbacks.size(); i++) this->keyPressCallbacks[i](key);
 }
 
 void Piano::releaseKey(int key) {
@@ -27,10 +28,47 @@ void Piano::releaseKey(int key) {
     if (index < 0 || index >= this->keys.size()) return;
     QPushButton* button = this->keys[index];
     button->setDown(false);
+
+    auto it = std::find(this->pressedKeys.begin(), this->pressedKeys.end(), key);
+    if (it != this->pressedKeys.end()) this->pressedKeys.erase(it);
+
+    for (unsigned int i = 0; i < this->keyReleaseCallbacks.size(); i++) this->keyReleaseCallbacks[i](key);
 }
 
 void Piano::setDefaultVelocity(double velocity) {
     this->defaultVelocity = velocity;
+}
+
+int Piano::getOctave() {
+    return this->octave;
+}
+
+int Piano::getWhiteKeysCount() {
+    return this->whiteKeys;
+}
+
+bool Piano::isReady() {
+    return this->initiated;
+}
+
+const int Piano::codeToKey(int code) {
+    return ((int)(code / 12) - 1) * (KEY_COLOUR[code % 12] ? 5 : 7) + KEYS_BEFORE[code % 12];
+}
+
+const int Piano::codeToColourIndex(int code) {
+    return Piano::codeToKey(code) - this->octave * (KEY_COLOUR[code % 12] ? 5 : 7);
+}
+
+std::vector<int> Piano::getPressedKeys() {
+    return this->pressedKeys;
+}
+
+void Piano::onKeyPressed(std::function<void(int)> callback) {
+    this->keyPressCallbacks.push_back(callback);
+}
+
+void Piano::onKeyReleased(std::function<void(int)> callback) {
+    this->keyReleaseCallbacks.push_back(callback);
 }
 
 void Piano::resizeEvent(QResizeEvent* event) {
@@ -49,6 +87,8 @@ void Piano::keyReleaseEvent(QKeyEvent* event) {
 }
 
 void Piano::initiate(int numKeys, int octave) {
+    this->initiated = false;
+
     this->setMinimumSize(numKeys * 50, 400);
     this->octave = octave;
     this->whiteKeys = 0;
@@ -78,15 +118,16 @@ void Piano::initiate(int numKeys, int octave) {
         if (!KEY_COLOUR[i % 12]) this->whiteKeys++;
 
         QObject::connect(button, &QPushButton::pressed, [=]() {
-            this->audio->playNote(i + (octave + 1) * 12);
+            this->pressKey(i + (octave + 1) * 12);
         });
 
         QObject::connect(button, &QPushButton::released, [=]() {
-            this->audio->stopNote(i + (octave + 1) * 12);
+            this->releaseKey(i + (octave + 1) * 12);
         });
     }
 
     this->redraw();
+    this->initiated = true;
 }
 
 void Piano::redraw() {
@@ -106,7 +147,7 @@ void Piano::redraw() {
 
             blackIndex++;
         } else {
-            button->setGeometry(whiteIndex * whiteKeyWidth, 0, whiteKeyWidth, this->height());
+            button->setGeometry(whiteIndex * whiteKeyWidth, 0, (i == this->keys.size() - 1 ? this->width() - whiteKeyWidth * whiteIndex : whiteKeyWidth), this->height());
             
             whiteIndex++;
         }
