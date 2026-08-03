@@ -1,6 +1,7 @@
 #include <QLinearGradient>
 #include <QVBoxLayout>
 #include <MidiFile.h>
+#include <algorithm>
 #include <map>
 
 #include "midiPlayer.h"
@@ -24,27 +25,28 @@ MidiPlayer::MidiPlayer(Piano& piano, QWidget* parent) : QWidget(parent), piano(&
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 2);
     layout->addWidget(this->view);
+
+    piano.onKeyPressed([=](int key) {
+    });
 }
 
 MidiPlayer::~MidiPlayer() {
 }
 
-bool MidiPlayer::loadFile(QString path, int track) {
+bool MidiPlayer::loadFile(QString path) {
     smf::MidiFile file;
     file.read(path.toStdString());
     file.doTimeAnalysis();
     file.linkNotePairs();
 
-    if (track >= file.getTrackCount()) return false;
     this->events.clear();
 
-    smf::MidiEventList midiEvents = file[track];
+    for (unsigned int i = 0; i < file.getTrackCount(); i++)
+        for (unsigned int j = 0; j < file[i].getEventCount(); j++) {
+            smf::MidiEvent event = file[i][j];
 
-    for (unsigned int i = 0; i < midiEvents.getEventCount(); i++) {
-        smf::MidiEvent event = midiEvents[i];
-
-        if (event.isNote()) this->events.push_back({ event.seconds, event.isNoteOn(), event.getKeyNumber(), event.getVelocity() / 127.0 });
-    }
+            if (event.isNote()) this->events.push_back({ event.seconds, event.isNoteOn(), event.getKeyNumber(), event.getVelocity() / 127.0 });
+        }
 
     return true;
 }
@@ -80,7 +82,9 @@ void MidiPlayer::start() {
 
     this->startTime = std::chrono::high_resolution_clock::now();
     this->playing = true;
+    this->time = -1.0;
     this->runner->start(16);
+    this->trainingKeys.clear();
 }
 
 void MidiPlayer::stop() {
@@ -102,6 +106,14 @@ void MidiPlayer::pause() {
     this->playing = false;
 }
 
+void MidiPlayer::setTraining(bool training) {
+    this->training = training;
+}
+
+std::vector<int> MidiPlayer::getTrainingKeys() {
+    return this->trainingKeys;
+}
+
 void MidiPlayer::advance() {
     std::chrono::system_clock::time_point now = std::chrono::high_resolution_clock::now();
     double delta = std::chrono::duration<double>(now - this->startTime).count();
@@ -121,7 +133,7 @@ void MidiPlayer::advance() {
 
         int y = this->height() - (note.time * this->speed) - note.duration * this->speed + this->time * this->speed;
 
-        if (y > this->height()) {;
+        if (y > this->height()) {
             this->scene->removeItem(rect);
             delete rect;
 
@@ -136,11 +148,31 @@ void MidiPlayer::advance() {
         Event& event = this->events[i];
         if (this->time < event.time) continue;
 
-        if (event.active) this->piano->pressKey(event.key, event.velocity);
-        else this->piano->releaseKey(event.key);
+        if (this->training)
+            if (event.active) { this->pause(); this->trainingKeys.push_back(event.key); }
+            else { auto it = std::find(this->trainingKeys.begin(), this->trainingKeys.end(), event.key); if (it != this->trainingKeys.end()) this->trainingKeys.erase(it); } 
+        else
+            if (event.active) this->piano->pressKey(event.key, event.velocity);
+            else this->piano->releaseKey(event.key);
 
         this->events.erase(this->events.begin() + i);
         i--;
+    }
+
+    if (this->training) {
+        std::vector<int> pressedKeys = this->piano->getPressedKeys();
+        bool allKeysPressed = true;
+
+        for (unsigned int i = 0; i < this->trainingKeys.size(); i++) {
+            int key = this->trainingKeys[i];
+            auto it = std::find(pressedKeys.begin(), pressedKeys.end(), key);
+            if (it == pressedKeys.end()) {
+                allKeysPressed = false;
+                break;
+            }
+        }
+
+        if (allKeysPressed && pressedKeys.size() >= this->trainingKeys.size()) this->resume();
     }
 
     if (this->notes.size() <= 0 && this->events.size() <= 0) this->stop();

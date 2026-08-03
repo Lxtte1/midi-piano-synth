@@ -20,7 +20,6 @@ int main(int argc, char* argv[]) {
     mainLayout->setVerticalSpacing(0);
     mainLayout->setHorizontalSpacing(5);
 
-    
     Settings settings(&window);
     settings.show();
     mainLayout->addWidget(&settings, 0, 0, 2, 1);
@@ -49,6 +48,7 @@ int main(int argc, char* argv[]) {
     mainLayout->addWidget(&player, 0, 1);
     settings.onFileSelect([&player](QString file) { if (player.loadFile(file)) player.start(); });
     settings.onFilePlay([&player](bool play) { if (play) player.resume(); else player.pause(); });
+    settings.onTraningChange([&player](bool training) { player.setTraining(training); });
     
     window.resize(mainLayout->minimumSize());
     return app.exec();

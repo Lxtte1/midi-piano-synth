@@ -1,5 +1,6 @@
 #include <QResizeEvent>
 #include <QPushButton>
+#include <functional>
 #include <QKeyEvent>
 #include <QWidget>
 #include "audio.h"
@@ -23,6 +24,10 @@ class Piano : public QWidget {
         bool isReady();
         static const int codeToKey(int code);
         const int codeToColourIndex(int code);
+        std::vector<int> getPressedKeys();
+
+        void onKeyPressed(std::function<void(int)> callback);
+        void onKeyReleased(std::function<void(int)> callback);
 
         bool showLabels = true;
 
@@ -41,6 +46,9 @@ class Piano : public QWidget {
         std::vector<QPushButton*> keys;
         double defaultVelocity = 0.5;
         bool initiated = false;
+        std::vector<int> pressedKeys;
+        std::vector<std::function<void(int)>> keyPressCallbacks;
+        std::vector<std::function<void(int)>> keyReleaseCallbacks;
 };
 
 #pragma once

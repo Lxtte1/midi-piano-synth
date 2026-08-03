@@ -28,12 +28,13 @@ class MidiPlayer : public QWidget {
         MidiPlayer(Piano& piano, QWidget* parent = nullptr);
         ~MidiPlayer();
 
-        bool loadFile(QString path, int track = 1);
+        bool loadFile(QString path);
         void start();
         void stop();
-
         void resume();
         void pause();
+        void setTraining(bool training = true);
+        std::vector<int> getTrainingKeys();
 
         struct Note {
             double time;
@@ -56,8 +57,10 @@ class MidiPlayer : public QWidget {
         double speed = 200.0;
         bool playing = false;
         double time = 0.0;
+        bool training = false;
 
         Piano* piano;
+        std::vector<int> trainingKeys;
         std::vector<Note> notes;
         std::vector<Event> events;
         QGraphicsScene* scene;

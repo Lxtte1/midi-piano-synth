@@ -40,6 +40,22 @@ Settings::Settings(QWidget* parent) : QWidget(parent) {
         }
     }
 
+    {
+        QGridLayout* playerSettings = new QGridLayout(this);
+        playerSettings->setAlignment(Qt::AlignLeft);
+        layout->addLayout(playerSettings);
+
+        {
+            QCheckBox* box = new QCheckBox();
+            playerSettings->addWidget(box, 0, 0);
+
+            QLabel* label = new QLabel(QString("Training mode"), this);
+            playerSettings->addWidget(label, 0, 1, Qt::AlignLeft);
+
+            QObject::connect(box, &QCheckBox::stateChanged, this, [=]() { this->trainingCallback(box->isChecked()); });
+        }
+    }
+
     layout->addStretch(1);
 
     {
@@ -154,6 +170,10 @@ void Settings::onFileSelect(std::function<void(QString)> callback) {
 
 void Settings::onFilePlay(std::function<void(bool)> callback) {
     this->filePlayCallback = callback;
+}
+
+void Settings::onTraningChange(std::function<void(bool)> callback) {
+    this->trainingCallback = callback;
 }
 
 void Settings::getDevicesCallback(std::function<QStringList()> call) {
