@@ -25,9 +25,6 @@ MidiPlayer::MidiPlayer(Piano& piano, QWidget* parent) : QWidget(parent), piano(&
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 2);
     layout->addWidget(this->view);
-
-    piano.onKeyPressed([=](int key) {
-    });
 }
 
 MidiPlayer::~MidiPlayer() {

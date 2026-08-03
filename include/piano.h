@@ -26,9 +26,6 @@ class Piano : public QWidget {
         const int codeToColourIndex(int code);
         std::vector<int> getPressedKeys();
 
-        void onKeyPressed(std::function<void(int)> callback);
-        void onKeyReleased(std::function<void(int)> callback);
-
         bool showLabels = true;
 
     protected:
@@ -47,8 +44,6 @@ class Piano : public QWidget {
         double defaultVelocity = 0.5;
         bool initiated = false;
         std::vector<int> pressedKeys;
-        std::vector<std::function<void(int)>> keyPressCallbacks;
-        std::vector<std::function<void(int)>> keyReleaseCallbacks;
 };
 
 #pragma once

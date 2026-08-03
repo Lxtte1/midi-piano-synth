@@ -17,8 +17,6 @@ void Piano::pressKey(int key, double velocity) {
     QPushButton* button = this->keys[index];
     button->setDown(true);
     this->pressedKeys.push_back(key);
-
-    for (unsigned int i = 0; i < this->keyPressCallbacks.size(); i++) this->keyPressCallbacks[i](key);
 }
 
 void Piano::releaseKey(int key) {
@@ -31,8 +29,6 @@ void Piano::releaseKey(int key) {
 
     auto it = std::find(this->pressedKeys.begin(), this->pressedKeys.end(), key);
     if (it != this->pressedKeys.end()) this->pressedKeys.erase(it);
-
-    for (unsigned int i = 0; i < this->keyReleaseCallbacks.size(); i++) this->keyReleaseCallbacks[i](key);
 }
 
 void Piano::setDefaultVelocity(double velocity) {
@@ -61,14 +57,6 @@ const int Piano::codeToColourIndex(int code) {
 
 std::vector<int> Piano::getPressedKeys() {
     return this->pressedKeys;
-}
-
-void Piano::onKeyPressed(std::function<void(int)> callback) {
-    this->keyPressCallbacks.push_back(callback);
-}
-
-void Piano::onKeyReleased(std::function<void(int)> callback) {
-    this->keyReleaseCallbacks.push_back(callback);
 }
 
 void Piano::resizeEvent(QResizeEvent* event) {
